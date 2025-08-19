@@ -588,6 +588,124 @@ async def websocket_endpoint(websocket: WebSocket, username: str):
         await message_queue.remove_websocket(websocket, username)
 
 
+
+@router.get("/download/{course_name}")
+async def download_course(request: Request, course_name: str):
+    # Check if user is logged in
+    username = request.session.get("username")
+    if not username:
+        return RedirectResponse(url="/login", status_code=303)
+    
+    import os
+    import base64
+    import subprocess
+    from fastapi.responses import FileResponse
+    
+    # Define the course directory path
+    course_dir = os.path.join("cartridge_current_working_state", course_name)
+    
+    if not os.path.exists(course_dir):
+        print(f"Course directory not found: {course_dir}")
+        return {"message": "Course directory not found", "course_name": course_name}
+    
+    changed_files = []
+    
+    # Recursively walk through all directories and files
+    for root, dirs, files in os.walk(course_dir):
+        for file in files:
+            # Skip table_inspect.html
+            if file == "table_inspect.html":
+                print(f"Skipping file: {file}")
+                continue
+                
+            file_path = os.path.join(root, file)
+            
+            try:
+                # Read file content
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                
+                # Check if file contains base64 markers
+                if "@@@@@@@@@@" in content:
+                    # Count occurrences to ensure we have at least 2 markers
+                    marker_count = content.count("@@@@@@@@@@")
+                    if marker_count >= 2:
+                        # Split content by markers
+                        parts = content.split("@@@@@@@@@@")
+                        
+                        if len(parts) >= 3:
+                            # Get the base64 content (middle part)
+                            base64_content = parts[1]
+                            
+                            try:
+                                # Decode base64
+                                decoded_content = base64.b64decode(base64_content).decode('utf-8')
+                                
+                                # Replace the content: keep everything before first marker,
+                                # add decoded content, keep everything after last marker
+                                new_content = parts[0] + decoded_content + parts[2]
+                                
+                                # Write back to file
+                                with open(file_path, 'w', encoding='utf-8') as f:
+                                    f.write(new_content)
+                                
+                                changed_files.append(file_path)
+                                print(f"Changed file: {file_path}")
+                                
+                            except Exception as e:
+                                print(f"Error decoding base64 in {file_path}: {e}")
+                                
+            except Exception as e:
+                # Skip files that can't be read as text (binary files, etc.)
+                continue
+    
+    print(f"Total files changed: {len(changed_files)}")
+    for file_path in changed_files:
+        print(f"File changed: {file_path}")
+    
+    # Run CLI commands
+    try:
+        # Run list command
+        list_cmd = [".venv/bin/python", "cartridge_cli.py", "list", course_dir]
+        print(f"Running command: {' '.join(list_cmd)}")
+        list_result = subprocess.run(list_cmd, capture_output=True, text=True, check=True)
+        print(f"List command output: {list_result.stdout}")
+        
+        # Run package command
+        package_cmd = [".venv/bin/python", "cartridge_cli.py", "package", course_dir]
+        print(f"Running command: {' '.join(package_cmd)}")
+        package_result = subprocess.run(package_cmd, capture_output=True, text=True, check=True)
+        print(f"Package command output: {package_result.stdout}")
+        
+        # Look for the generated zip file (assuming it's created in the course directory or parent)
+        zip_filename = f"{course_name}.zip"
+        zip_path = os.path.join(course_dir, zip_filename)
+        
+        # If not found in course dir, check parent directory
+        if not os.path.exists(zip_path):
+            zip_path = os.path.join("cartridge_current_working_state", zip_filename)
+        
+        # If still not found, check current directory
+        if not os.path.exists(zip_path):
+            zip_path = zip_filename
+        
+        if os.path.exists(zip_path):
+            print(f"Serving download file: {zip_path}")
+            return FileResponse(
+                path=zip_path,
+                filename=zip_filename,
+                media_type='application/zip'
+            )
+        else:
+            print(f"Generated zip file not found: {zip_filename}")
+            return {"message": "Package created but zip file not found", "course_name": course_name}
+            
+    except subprocess.CalledProcessError as e:
+        print(f"CLI command failed: {e}")
+        print(f"Error output: {e.stderr}")
+        return {"message": "CLI command failed", "course_name": course_name, "error": str(e)}
+
+
 @router.get("/", response_class=HTMLResponse)
 async def get_index(request: Request):
     # Check if user is logged in

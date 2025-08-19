@@ -7,6 +7,7 @@ import argparse
 import sys
 from pathlib import Path
 import shutil
+import base64
 from cartridge_engine import CartridgeGenerator
 
 
@@ -518,13 +519,34 @@ def update_wiki(args):
         print(f"Error finding wiki page: {e}")
         return 1
     
+    # Handle base64 encoding/decoding flags
+    content = args.content
+    if hasattr(args, 'encode_base64') and args.encode_base64:
+        if content:
+            content = base64.b64encode(content.encode('utf-8')).decode('ascii')
+            print(f"Content encoded to base64: {len(content)} characters")
+        else:
+            print("Error: --encode-base64 specified but no --content provided")
+            return 1
+    elif hasattr(args, 'decode_base64') and args.decode_base64:
+        if content:
+            try:
+                content = base64.b64decode(content.encode('ascii')).decode('utf-8')
+                print(f"Content decoded from base64: {len(content)} characters")
+            except Exception as e:
+                print(f"Error decoding base64 content: {e}")
+                return 1
+        else:
+            print("Error: --decode-base64 specified but no --content provided")
+            return 1
+    
     # Update wiki page
     try:
         print(f"Updating wiki page '{args.title}' in cartridge '{args.cartridge_name}'")
         generator.update_wiki(
             wiki_page_id, 
             page_title=args.new_title,
-            page_content=args.content,
+            page_content=content,
             published=args.published,
             position=args.position
         )
@@ -1892,6 +1914,8 @@ def main():
     update_wiki_parser.add_argument('--content', help='New wiki page content (optional)')
     update_wiki_parser.add_argument('--published', type=lambda x: x.lower() == 'true', help='Published status (true/false, optional)')
     update_wiki_parser.add_argument('--position', type=int, help='Position in module (optional)')
+    update_wiki_parser.add_argument('--encode-base64', action='store_true', help='Encode content as base64 before storing')
+    update_wiki_parser.add_argument('--decode-base64', action='store_true', help='Decode content from base64 before storing')
     
     # Copy-wiki command
     copy_wiki_parser = subparsers.add_parser('copy-wiki', help='Copy a wiki page to another module in a cartridge')

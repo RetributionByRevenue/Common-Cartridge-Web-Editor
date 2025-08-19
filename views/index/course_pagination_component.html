@@ -40,6 +40,7 @@
             <details>
                 <summary>Course Settings</summary>
                 <p><a href="#edit-{{ course[0]|replace(' ', '-')|replace(':', '')|replace('(', '')|replace(')', '')|replace('.', '')|lower }}" rel="modal:open">Edit Course Properties</a></p>
+                <p><a href="/download/{{ course[0] }}">Download Course</a></p>
                 <p><a href="#delete-{{ course[0]|replace(' ', '-')|replace(':', '')|replace('(', '')|replace(')', '')|replace('.', '')|lower }}" rel="modal:open">Delete Course</a></p>
             </details>
         </div>
@@ -95,8 +96,8 @@
                     <label for="new_title">Module Title:</label>
                     <input type="text" name="new_title" value="{{ module.title }}" onkeypress="return /[0-9a-zA-Z._\-(\)\[\]\?#&=:@ ]/.test(event.key)" required>
                     <br><br>
-                    <label for="position">Position (optional):</label>
-                    <input type="number" name="position" placeholder="Enter position" min="1">
+                    <label for="position">Position (required):</label>
+                    <input type="number" name="position" placeholder="Enter position" min="1" required>
                     <br><br>
                     <button type="submit">Update Module</button>
                 </form>

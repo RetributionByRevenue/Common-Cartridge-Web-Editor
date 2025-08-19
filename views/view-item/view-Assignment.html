@@ -47,13 +47,16 @@
     <!-- Summernote CSS and JS -->
     <link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.js"></script>
-    <script> let data = "{{ item.content }}" </script>
+    <script> 
+        let data = "{{ item.content }}" 
+    </script>
+    
 </head>
 <body>
     <div id="js-view" phx-hook="JsView">
         <h2>Course: {{ course_name }}</h2>
         <h3>Module: {{ module_name }}</h3>
-        <h4>Edit Item: {{ item.title }}</h4>
+        <h4>Edit {{ content_type }}: {{ item.title }}</h4>
 
         <div>
             <label for="item_title">Item Title:</label><br>
@@ -103,8 +106,20 @@
                     ['view', ['fullscreen', 'codeview', 'help']]
                 ]
             });
+            $('div.note-editable').height( (window.innerHeight)*0.7);
 
-            $('#summernote').summernote('code', atob(data));
+            if (data.includes("@@@@@@@@@@")){
+                
+                data = data.split("@@@@@@@@@@")
+                console.log(data)
+                data = data.at(1)
+                $('#summernote').summernote('code', atob(data));
+            }else{
+                    $('#summernote').summernote('code', '');
+            }
+
+            
+
 
             $('#update-btn').click(function() {
                 const summernoteData = $('#summernote').summernote('code');
@@ -118,7 +133,7 @@
                     item_title: itemTitle,
                     position: position,
                     points: points,
-                    content: encodedContent
+                    content: `${'@@@@@@@@@@'}${encodedContent}${'@@@@@@@@@@'}`
                 })
                 .done(function(response) {
                     console.log('Success:', response);

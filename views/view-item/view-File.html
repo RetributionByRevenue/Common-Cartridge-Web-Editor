@@ -53,7 +53,7 @@
     <div id="js-view" phx-hook="JsView">
         <h2>Course: {{ course_name }}</h2>
         <h3>Module: {{ module_name }}</h3>
-        <h4>Edit Item: {{ item.title }}</h4>
+        <h4>Edit {{ content_type }}: {{ item.title }}</h4>
 
         <div>
             <label for="item_title">Filename:</label><br>
@@ -97,8 +97,17 @@
                     ['view', ['fullscreen', 'codeview', 'help']]
                 ]
             });
+            $('div.note-editable').height( (window.innerHeight)*0.7);
 
-            $('#summernote').summernote('code', atob(data));
+            if (data.includes("@@@@@@@@@@")){
+                
+                data = data.split("@@@@@@@@@@")
+                console.log(data)
+                data = data.at(1)
+                $('#summernote').summernote('code', atob(data));
+            }else{
+                    $('#summernote').summernote('code', '');
+            }
 
             $('#update-btn').click(function() {
                 const summernoteData = $('#summernote').summernote('code');
@@ -107,10 +116,10 @@
                 
                 const encodedContent = btoa(summernoteData);
                 
-                $.post('/update-item/{{ course_name }}/{{ module_name }}/{{ item.title }}/{{ content_type }}', {
+                $.post('/update-item/{{ course_name }}/{{ module_name }}/{{ item.filename }}/{{ content_type }}', {
                     new_filename: newFilename,
                     position: position,
-                    content: encodedContent
+                    content: `${'@@@@@@@@@@'}${encodedContent}${'@@@@@@@@@@'}`
                 })
                 .done(function(response) {
                     console.log('Success:', response);

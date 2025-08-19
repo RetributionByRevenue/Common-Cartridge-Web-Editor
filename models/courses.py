@@ -320,7 +320,7 @@ class Courses:
             if kwargs.get("description"):
                 args.extend(["--description", kwargs["description"].strip()])
             if kwargs.get("points") is not None:
-                args.extend(["--points", str(kwargs["points"])])
+                args.extend(["--points", str( int(kwargs["points"]) ) ])
             if kwargs.get("position") is not None:
                 args.extend(["--position", str(kwargs["position"])])
                 

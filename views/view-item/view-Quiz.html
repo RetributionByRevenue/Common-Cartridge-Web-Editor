@@ -53,11 +53,11 @@
     <div id="js-view" phx-hook="JsView">
         <h2>Course: {{ course_name }}</h2>
         <h3>Module: {{ module_name }}</h3>
-        <h4>Edit Item: {{ item.title }}</h4>
+        <h4>Edit {{ content_type }}: {{ item.title }}</h4>
 
         <div>
             <label for="item_title">Item Title:</label><br>
-            <input type="text" id="item_title" name="item_title" value="{{ item.title }}" required style="width: 100%; padding: 8px; margin: 5px 0;">
+            <input type="text" id="item_title" name="item_title" value="{{ item.title }}" required style="width: 90%; padding: 8px; margin: 5px 0;">
         </div>
         <br>
         
@@ -103,8 +103,17 @@
                     ['view', ['fullscreen', 'codeview', 'help']]
                 ]
             });
+            $('div.note-editable').height( (window.innerHeight)*0.7);
 
-            $('#summernote').summernote('code', atob(data));
+            if (data.includes("@@@@@@@@@@")){
+                
+                data = data.split("@@@@@@@@@@")
+                console.log(data)
+                data = data.at(1)
+                $('#summernote').summernote('code', atob(data));
+            }else{
+                    $('#summernote').summernote('code', '');
+            }
 
             $('#update-btn').click(function() {
                 const summernoteData = $('#summernote').summernote('code');
@@ -118,7 +127,7 @@
                     item_title: itemTitle,
                     position: position,
                     points: points,
-                    description: encodedDescription
+                    description: `${'@@@@@@@@@@'}${encodedDescription}${'@@@@@@@@@@'}`
                 })
                 .done(function(response) {
                     console.log('Success:', response);
