@@ -1,0 +1,81 @@
+{% macro module_items_display(items, course_name, module_name, module_name_arr) %}
+    {% if items %}
+        {% for item in items %}
+        <div style="width: 100%; border: 2px solid black; border-radius: 8px; padding: 10px; box-sizing: border-box;">
+            <h4>{{ item.title }}</h4>
+            <p><strong>Content Type:</strong> {{ item.content_type }}</p>
+            <p><a href="/view-item/{{ course_name }}/{{ module_name }}/{{ item.title }}/{{ item.content_type }}">Update {{ item.content_type }}: {{ item.title }}</a></p>
+            <p><a href="#delete-item-{{ course_name|replace(' ', '-')|replace(':', '')|replace('(', '')|replace(')', '')|replace('.', '')|lower }}-{{ module_name|replace(' ', '-')|replace(':', '')|replace('(', '')|replace(')', '')|replace('.', '')|lower }}-{{ item.title|replace(' ', '-')|replace(':', '')|replace('(', '')|replace(')', '')|replace('.', '')|lower }}" rel="modal:open">Delete {{ item.content_type }}: {{ item.title }}</a></p>
+            <p><a href="#copy-item-{{ course_name|replace(' ', '-')|replace(':', '')|replace('(', '')|replace(')', '')|replace('.', '')|lower }}-{{ module_name|replace(' ', '-')|replace(':', '')|replace('(', '')|replace(')', '')|replace('.', '')|lower }}-{{ item.title|replace(' ', '-')|replace(':', '')|replace('(', '')|replace(')', '')|replace('.', '')|lower }}" rel="modal:open"> Copy {{ item.content_type }}: {{ item.title }}</a></p>
+        </div>
+        <br>
+        {% endfor %}
+    {% else %}
+        <div style="width: 100%; border: 2px solid black; border-radius: 8px; padding: 10px; box-sizing: border-box;">
+            <p><em>No items added yet.</em></p>
+        </div>
+        <br>
+    {% endif %}
+    
+    <!-- Add Item Button -->
+    <p><a href="#add-item-{{ course_name|replace(' ', '-')|replace(':', '')|replace('(', '')|replace(')', '')|replace('.', '')|lower }}-{{ module_name|replace(' ', '-')|replace(':', '')|replace('(', '')|replace(')', '')|replace('.', '')|lower }}" rel="modal:open">Add Content</a></p>
+    
+    <!-- Add item modal -->
+    <div id="add-item-{{ course_name|replace(' ', '-')|replace(':', '')|replace('(', '')|replace(')', '')|replace('.', '')|lower }}-{{ module_name|replace(' ', '-')|replace(':', '')|replace('(', '')|replace(')', '')|replace('.', '')|lower }}" class="modal">
+        <h3>Add Item Page to Module: {{ module_name }}</h3>
+        <form action="/add-item/{{ course_name }}/{{ module_name }}" method="post">
+            <label for="item_title">Item Title:</label>
+            <input type="text" name="item_title" placeholder="Enter item title" onkeypress="return /[0-9a-zA-Z._\-\(\)\[\]\?#&=:@ ]/.test(event.key)" required>
+            <br><br>
+            <label for="content_type">Content Type:</label>
+            <select name="content_type" required>
+                <option value="WikiPage">WikiPage</option>
+                <option value="Assignment">Assignment</option>
+                <option value="DiscussionTopic">DiscussionTopic</option>
+                <option value="File">File</option>
+                <option value="Quiz">Quiz</option>
+            </select>
+            <br><br>
+            <button type="submit">Add Module</button>
+        </form>
+        <a href="#" rel="modal:close">Close</a>
+    </div>
+    
+    <!-- Delete item confirmation modals -->
+    {% if items %}
+        {% for item in items %}
+        <div id="delete-item-{{ course_name|replace(' ', '-')|replace(':', '')|replace('(', '')|replace(')', '')|replace('.', '')|lower }}-{{ module_name|replace(' ', '-')|replace(':', '')|replace('(', '')|replace(')', '')|replace('.', '')|lower }}-{{ item.title|replace(' ', '-')|replace(':', '')|replace('(', '')|replace(')', '')|replace('.', '')|lower }}" class="modal">
+            <h3>Delete {{ item.content_type }}: {{ item.title }}?</h3>
+            <p>Are you sure you want to delete this {{ item.content_type }}? This action cannot be undone.</p>
+            <form action="/delete-item/{{ course_name }}/{{ module_name }}/{{ item.title }}/{{ item.content_type }}" method="post">
+                <button type="submit" style="background-color: #dc3545; color: white;">Yes, Delete Item</button>
+            </form>
+            <a href="#" rel="modal:close">Cancel</a>
+        </div>
+        {% endfor %}
+    {% endif %}
+    
+    <!-- Copy item modals -->
+    {% if items %}
+        {% for item in items %}
+        <div id="copy-item-{{ course_name|replace(' ', '-')|replace(':', '')|replace('(', '')|replace(')', '')|replace('.', '')|lower }}-{{ module_name|replace(' ', '-')|replace(':', '')|replace('(', '')|replace(')', '')|replace('.', '')|lower }}-{{ item.title|replace(' ', '-')|replace(':', '')|replace('(', '')|replace(')', '')|replace('.', '')|lower }}" class="modal">
+            <h3>Copy {{ item.content_type }}: {{ item.title }}?</h3>
+            <form action="/copy-item/{{ course_name }}/{{ module_name }}/{{ item.title }}/{{ item.content_type }}" method="post">
+                <label for="destination_module">Copy to Module:</label>
+                <select name="destination_module" id="destination_module" required>
+                    {% if module_name_arr %}
+                        {% for module_name in module_name_arr %}
+                            <option value="{{ module_name }}">{{ module_name }}</option>
+                        {% endfor %}
+                    {% else %}
+                        <option value="">No modules available</option>
+                    {% endif %}
+                </select>
+                <br><br>
+                <button type="submit">Copy {{ item.content_type }}</button>
+            </form>
+            <a href="#" rel="modal:close">Cancel</a>
+        </div>
+        {% endfor %}
+    {% endif %}
+{% endmacro %}

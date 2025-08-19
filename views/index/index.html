@@ -1,0 +1,76 @@
+{% from 'index/course_pagination_component.html' import course_list, course_accordion %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PyView with FastAPI</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌍</text></svg>">
+    <script>
+        const socket = new WebSocket("ws://" + window.location.host + "/live/{{ username }}");
+        socket.onopen = () => {
+            console.log("WebSocket connected");
+        };
+
+        socket.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            if (data.event === "execute-js") {
+                eval(data.payload.code);
+            } else if (data.event === "render") {
+                document.getElementById("js-view").innerHTML = data.payload.html;
+            }
+        };
+
+        document.addEventListener("click", (event) => {
+            const target = event.target.closest("[phx-click]");
+            if (target) {
+                const eventName = target.getAttribute("phx-click");
+                socket.send(JSON.stringify({ event: eventName, payload: {} }));
+            }
+        });
+
+        document.addEventListener("submit", (event) => {
+            event.preventDefault();
+            const form = event.target;
+            fetch(form.action, {
+                method: form.method,
+                body: new FormData(form)
+            });
+        });
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-loading-overlay/2.1.7/loadingoverlay.min.js" integrity="sha512-hktawXAt9BdIaDoaO9DlLp6LYhbHMi5A36LcXQeHgVKUH6kJMOQsAtIw2kmQ9RERDpnSTlafajo6USh9JUXckw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/AlertifyJS/1.13.1/alertify.min.js" integrity="sha512-JnjG+Wt53GspUQXQhc+c4j8SBERsgJAoHeehagKHlxQN+MtCCmFDghX9/AcbkkNRZptyZU4zC8utK59M5L45Iw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/AlertifyJS/1.13.1/css/alertify.css" integrity="sha512-MpdEaY2YQ3EokN6lCD6bnWMl5Gwk7RjBbpKLovlrH6X+DRokrPRAF3zQJl1hZUiLXfo2e9MrOt+udOnHCAmi5w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-modal/0.9.1/jquery.modal.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-modal/0.9.1/jquery.modal.min.css" />
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.14.1/themes/base/jquery-ui.css">
+    <script src="https://code.jquery.com/ui/1.14.1/jquery-ui.js"></script>
+
+</head>
+<body>
+
+        <p>Status: {{ message }}</p>
+
+        <form action="/submit" method="post">
+            <button type="submit">Submit Form Test</button>
+        </form>
+
+        <div class="demo-container">
+            {{ course_accordion(courses_data) }}
+        </div>
+
+        <div id="ex1" class="modal">
+            <form action="/add-course" method="post" style="margin-top: 10px;">
+                <input type="text" name="course_name" placeholder="Enter course name" onkeypress="return /[0-9a-zA-Z._\-\(\)\[\]\?#&=:@ ]/.test(event.key)" required>
+                <button type="submit">Add Course</button>
+            </form>
+        </div>
+        <p><a href="#ex1" rel="modal:open">Add Course</a></p>
+
+        <form action="/logout" method="post" style="margin-top: 10px;">
+            <button type="submit">Logout</button>
+        </form>
+
+
+
+</body>
+</html>

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Edit Item - {{ item.title }}</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌍</text></svg>">
+    <script>
+        const socket = new WebSocket("ws://" + window.location.host + "/live/{{ username }}");
+        socket.onopen = () => {
+            console.log("WebSocket connected");
+        };
+
+        socket.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            if (data.event === "execute-js") {
+                eval(data.payload.code);
+            } else if (data.event === "render") {
+                document.getElementById("js-view").innerHTML = data.payload.html;
+            }
+        };
+
+        document.addEventListener("click", (event) => {
+            const target = event.target.closest("[phx-click]");
+            if (target) {
+                const eventName = target.getAttribute("phx-click");
+                socket.send(JSON.stringify({ event: eventName, payload: {} }));
+            }
+        });
+
+        document.addEventListener("submit", (event) => {
+            event.preventDefault();
+            const form = event.target;
+            fetch(form.action, {
+                method: form.method,
+                body: new FormData(form)
+            });
+        });
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-loading-overlay/2.1.7/loadingoverlay.min.js" integrity="sha512-hktawXAt9BdIaDoaO9DlLp6LYhbHMi5A36LcXQeHgVKUH6kJMOQsAtIw2kmQ9RERDpnSTlafajo6USh9JUXckw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/AlertifyJS/1.13.1/alertify.min.js" integrity="sha512-JnjG+Wt53GspUQXQhc+c4j8SBERsgJAoHeehagKHlxQN+MtCCmFDghX9/AcbkkNRZptyZU4zC8utK59M5L45Iw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/AlertifyJS/1.13.1/css/alertify.css" integrity="sha512-MpdEaY2YQ3EokN6lCD6bnWMl5Gwk7RjBbpKLovlrH6X+DRokrPRAF3zQJl1hZUiLXfo2e9MrOt+udOnHCAmi5w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-modal/0.9.1/jquery.modal.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-modal/0.9.1/jquery.modal.min.css" />
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.14.1/themes/base/jquery-ui.css">
+    <script src="https://code.jquery.com/ui/1.14.1/jquery-ui.js"></script>
+    
+    <!-- Summernote CSS and JS -->
+    <link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.js"></script>
+    <script> let data = "{{ item.body }}" </script>
+</head>
+<body>
+    <div id="js-view" phx-hook="JsView">
+        <h2>Course: {{ course_name }}</h2>
+        <h3>Module: {{ module_name }}</h3>
+        <h4>Edit Item: {{ item.title }}</h4>
+
+        <div>
+            <label for="item_title">Item Title:</label><br>
+            <input type="text" id="item_title" name="item_title" value="{{ item.title }}" required style="width: 100%; padding: 8px; margin: 5px 0;">
+        </div>
+        <br>
+        
+        <div>
+            <label for="position">Position:</label><br>
+            <input type="number" id="position" name="position" value="{{ item.position }}" min="1" step="1" style="width: 100px; padding: 8px; margin: 5px 0;">
+        </div>
+        <br>
+        
+        <div>
+            <label for="content">Content:</label><br>
+            <textarea id="summernote" name="content"></textarea>
+        </div>
+        <br>
+        
+        <button id="update-btn" style="background-color: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px;">Update Item</button>
+        
+        <br>
+        <a href="/view_module/{{ course_name }}/{{ module_name }}">← Back to Module</a>
+        
+        <form action="/logout" method="post" style="margin-top: 20px;">
+            <button type="submit">Logout</button>
+        </form>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            $('#summernote').summernote({
+                height: 300,
+                toolbar: [
+                    ['style', ['style']],
+                    ['font', ['bold', 'underline', 'clear']],
+                    ['color', ['color']],
+                    ['para', ['ul', 'ol', 'paragraph']],
+                    ['table', ['table']],
+                    ['insert', ['link', 'picture', 'video']],
+                    ['view', ['fullscreen', 'codeview', 'help']]
+                ]
+            });
+
+            $('#summernote').summernote('code', atob(data));
+
+            $('#update-btn').click(function() {
+                const summernoteData = $('#summernote').summernote('code');
+                const itemTitle = $('#item_title').val();
+                const position = $('#position').val();
+                
+                const encodedContent = btoa(summernoteData);
+                
+                $.post('/update-item/{{ course_name }}/{{ module_name }}/{{ item.title }}/{{ content_type }}', {
+                    item_title: itemTitle,
+                    position: position,
+                    content: encodedContent
+                })
+                .done(function(response) {
+                    console.log('Success:', response);
+                    alertify.success('Item updated successfully!');
+                })
+                .fail(function(xhr, status, error) {
+                    console.error('Error:', error);
+                    alertify.error('Failed to update item: ' + error);
+                });
+            });
+        });
+    </script>
+</body>
+</html>

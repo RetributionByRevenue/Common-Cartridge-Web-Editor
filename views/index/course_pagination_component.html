@@ -1,0 +1,125 @@
+{% macro course_list(courses) %}
+    {% if courses %}
+        <h3>Courses:</h3>
+        <ul>
+        {% for course in courses %}
+            <li>{{ course }}</li>
+        {% endfor %}
+        </ul>
+    {% else %}
+        <p>No courses added yet.</p>
+    {% endif %}
+{% endmacro %}
+
+{% macro course_accordion(courses) %}
+    {% if courses %}
+        {% for course in courses %}
+        <div style="width: 100%; border: 2px solid black; border-radius: 8px; padding: 10px; box-sizing: border-box;">
+            <h3>Course: {{ course[0] }}</h3>
+            {% if course[1] %}
+                <div id="accordion-{{ course[0]|replace(' ', '-')|replace(':', '')|replace('(', '')|replace(')', '')|replace('.', '')|lower }}">
+                {% for module in course[1] %}
+                    <h3>Module: {{ module.title }}</h3>
+                    <div>
+                        <p><a href="/view_module/{{ course[0] }}/{{ module.title }}">View Module: {{ module.title }}'s' Content</a></p>
+                        <p><a href="#update-module-{{ course[0]|replace(' ', '-')|replace(':', '')|replace('(', '')|replace(')', '')|replace('.', '')|lower }}-{{ module.title|replace(' ', '-')|replace(':', '')|replace('(', '')|replace(')', '')|replace('.', '')|lower }}" rel="modal:open">Update Module: {{ module.title }}</a></p>
+                        <p><a href="#delete-module-{{ course[0]|replace(' ', '-')|replace(':', '')|replace('(', '')|replace(')', '')|replace('.', '')|lower }}-{{ module.title|replace(' ', '-')|replace(':', '')|replace('(', '')|replace(')', '')|replace('.', '')|lower }}" rel="modal:open">Delete Module: {{ module.title }}</a></p>
+                    </div>
+                {% endfor %}
+                </div>
+                <script>
+                $(function() {
+                    $("#accordion-{{ course[0]|replace(' ', '-')|replace(':', '')|replace('(', '')|replace(')', '')|replace('.', '')|lower }}").accordion();
+                });
+                </script>
+                <p><a href="#add-module-{{ course[0]|replace(' ', '-')|replace(':', '')|replace('(', '')|replace(')', '')|replace('.', '')|lower }}" rel="modal:open">Add Module</a></p>
+            {% else %}
+                <p><em>No modules added yet.</em></p>
+                <p><a href="#add-module-{{ course[0]|replace(' ', '-')|replace(':', '')|replace('(', '')|replace(')', '')|replace('.', '')|lower }}" rel="modal:open">Add Module</a></p>
+            {% endif %}
+            <details>
+                <summary>Course Settings</summary>
+                <p><a href="#edit-{{ course[0]|replace(' ', '-')|replace(':', '')|replace('(', '')|replace(')', '')|replace('.', '')|lower }}" rel="modal:open">Edit Course Properties</a></p>
+                <p><a href="#delete-{{ course[0]|replace(' ', '-')|replace(':', '')|replace('(', '')|replace(')', '')|replace('.', '')|lower }}" rel="modal:open">Delete Course</a></p>
+            </details>
+        </div>
+        <br>
+        {% endfor %}
+        
+        <!-- Edit modals for each course -->
+        {% for course in courses %}
+        <div id="edit-{{ course[0]|replace(' ', '-')|replace(':', '')|replace('(', '')|replace(')', '')|replace('.', '')|lower }}" class="modal">
+            <h3>Edit {{ course[0] }}</h3>
+            <form action="/edit/{{ course[0] }}" method="post">
+                <label for="course_name">Course Name:</label>
+                <input type="text" name="course_name" value="{{ course[0] }}" onkeypress="return /[0-9a-zA-Z._\-(\)\[\]\?#&=:@ ]/.test(event.key)" required>
+                <br><br>
+                <button type="submit">Update Course</button>
+            </form>
+            <a href="#" rel="modal:close">Close</a>
+        </div>
+        {% endfor %}
+        
+        <!-- Delete confirmation modals for each course -->
+        {% for course in courses %}
+        <div id="delete-{{ course[0]|replace(' ', '-')|replace(':', '')|replace('(', '')|replace(')', '')|replace('.', '')|lower }}" class="modal">
+            <h3>Delete {{ course[0] }}?</h3>
+            <p>Are you sure you want to delete this course? This action cannot be undone.</p>
+            <form action="/delete/{{ course[0] }}" method="post">
+                <button type="submit" style="background-color: #dc3545; color: white;">Yes, Delete Course</button>
+            </form>
+            <a href="#" rel="modal:close">Cancel</a>
+        </div>
+        {% endfor %}
+        
+        <!-- Add module modals for each course -->
+        {% for course in courses %}
+        <div id="add-module-{{ course[0]|replace(' ', '-')|replace(':', '')|replace('(', '')|replace(')', '')|replace('.', '')|lower }}" class="modal">
+            <h3>Add Module to {{ course[0] }}</h3>
+            <form action="/add-module/{{ course[0] }}" method="post">
+                <label for="module_name">Module Name:</label>
+                <input type="text" name="module_name" placeholder="Enter module name" onkeypress="return /[0-9a-zA-Z._\-(\)\[\]\?#&=:@ ]/.test(event.key)" required>
+                <br><br>
+                <button type="submit">Add Module</button>
+            </form>
+            <a href="#" rel="modal:close">Close</a>
+        </div>
+        {% endfor %}
+        
+        <!-- Update module modals -->
+        {% for course in courses %}
+            {% for module in course[1] %}
+            <div id="update-module-{{ course[0]|replace(' ', '-')|replace(':', '')|replace('(', '')|replace(')', '')|replace('.', '')|lower }}-{{ module.title|replace(' ', '-')|replace(':', '')|replace('(', '')|replace(')', '')|replace('.', '')|lower }}" class="modal">
+                <h3>Update Module: {{ module.title }}</h3>
+                <form action="/update-module/{{ course[0] }}/{{ module.title }}" method="post">
+                    <label for="new_title">Module Title:</label>
+                    <input type="text" name="new_title" value="{{ module.title }}" onkeypress="return /[0-9a-zA-Z._\-(\)\[\]\?#&=:@ ]/.test(event.key)" required>
+                    <br><br>
+                    <label for="position">Position (optional):</label>
+                    <input type="number" name="position" placeholder="Enter position" min="1">
+                    <br><br>
+                    <button type="submit">Update Module</button>
+                </form>
+                <a href="#" rel="modal:close">Cancel</a>
+            </div>
+            {% endfor %}
+        {% endfor %}
+        
+        <!-- Delete module confirmation modals -->
+        {% for course in courses %}
+            {% for module in course[1] %}
+            <div id="delete-module-{{ course[0]|replace(' ', '-')|replace(':', '')|replace('(', '')|replace(')', '')|replace('.', '')|lower }}-{{ module.title|replace(' ', '-')|replace(':', '')|replace('(', '')|replace(')', '')|replace('.', '')|lower }}" class="modal">
+                <h3>Delete Module: {{ module.title }}?</h3>
+                <p>Are you sure you want to delete this module? This action cannot be undone.</p>
+                <form action="/delete-module/{{ course[0] }}/{{ module.title }}" method="post">
+                    <button type="submit" style="background-color: #dc3545; color: white;">Yes, Delete Module</button>
+                </form>
+                <a href="#" rel="modal:close">Cancel</a>
+            </div>
+            {% endfor %}
+        {% endfor %}
+        
+    {% else %}
+        <p>No courses added yet.</p>
+    {% endif %}
+{% endmacro %}
